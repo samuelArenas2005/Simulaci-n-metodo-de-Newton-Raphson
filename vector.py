@@ -8,8 +8,8 @@ class Vector:
     def __init__(self,n):
         self.vec = [0]*n
     
-    def veczero(self,velocidadInit):
-        V0 = velocidadInit
+    def vecInicial(self,velocidad_init=1):
+        V0 = velocidad_init
         k = 0
         rango = [0.9,0.8,0.7,0.6,0.5,0.4,0.3,0.2,0.1,0]
         x0 = self.vec
@@ -23,15 +23,25 @@ class Vector:
                 else:
                     x0[j*81 + i] = random.uniform(rango[k], rango[k+1])
                     
-    def showInConsole(self,condicion):
+                    
+                    
+                    
+                    
+    def newVector(self):
+        print("Aqui va la logica recursiva")
+        
+        
+                    
+    def showInConsole(self,condicion=False):
         x0 = self.vec
         if condicion:
-            for j in reversed(range(9)):   # de arriba (NY-1) hacia abajo (0)
+            for j in reversed(range(9)):  
                 fila = x0[j*81:(j+1)*81]
                 fila_str = " ".join(f"{val:4.1f}" for val in fila)
                 print(fila_str)
                 
-    def showPlot(self,condicion):
+                
+    def showPlot(self,condicion=False):
         if condicion:
             x0 = self.vec
                 # --- visualización ---
