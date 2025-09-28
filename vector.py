@@ -20,9 +20,9 @@ class Vector:
         for i in range (0, 81): 
             if (i % 10 == 9 and rango[k+1] != 0.1): k += 1
             for j in range (0, 9):
-                if (i == 0 or (j == 8 and i <= 36)):
+                if (i == 0 or (j == 8 and i < 36)):
                     x0[j*81 + i] = V0
-                elif (j == 0 or i == 80 or (i >= 58 and j == 8) or (i > 36 and i < 58 and j > 5 and j <= 8) or (i > 10 and i < 20 and j > 0 and j < 3)):
+                elif (j == 0 or i == 80 or (i >= 58 and j == 8) or (i >= 36 and i <= 58 and j >= 5 and j <= 8) or (i > 10 and i < 20 and j > 0 and j < 3)):
                     x0[j*81 + i] = 0
                 elif (i >= 58 and  j > 5 and j <= 8):
                     x0[j*81 + i] = random.uniform(rango[9], rango[10])
@@ -37,9 +37,9 @@ class Vector:
         x0 = self.vec
         for i in range (0, 81):
             for j in range (0, 9):
-                if (i == 0 or (j == 8 and i <= 36)):
+                if (i == 0 or (j == 8 and i < 36)):
                     x0[j*81 + i] = V0
-                elif (j == 0 or i == 80 or (i >= 58 and j == 8) or (i > 36 and i < 58 and j > 5 and j <= 8) or (i > 10 and i < 20 and j > 0 and j < 3)):
+                elif (j == 0 or i == 80 or (i >= 58 and j == 8) or (i >= 36 and i <= 58 and j >= 5 and j <= 8) or (i > 10 and i < 20 and j > 0 and j < 3)):
                     x0[j*81 + i] = 0
                 else:
                     x0[j*81 + i] = 1
@@ -47,14 +47,14 @@ class Vector:
 
     def cal_function(self):
         
-        val_Vij=0.5
+        val_Vij=0.01
         x0=self.vec
 
         for i in range (0, 81): 
             for j in range (0, 9):
-                if (i == 0 or (j == 8 and i <= 36)):
+                if (i == 0 or (j == 8 and i < 36)):
                     self.vectFunction[j*81 + i] = 0
-                elif (j == 0 or i == 80 or (i >= 58 and j == 8) or (i > 36 and i < 58 and j > 5 and j <= 8) or (i > 10 and i < 20 and j > 0 and j < 3)):
+                elif (j == 0 or i == 80 or (i >= 58 and j == 8) or (i >= 36 and i <= 58 and j >= 5 and j <= 8) or (i > 10 and i < 20 and j > 0 and j < 3)):
                     self.vectFunction[j*81 + i] = 0
                 else:
                     self.vectFunction[j*81 + i] = 1/4 *( 
