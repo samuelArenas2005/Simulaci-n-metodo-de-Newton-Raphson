@@ -10,6 +10,7 @@ def main():
     xinit.cal_inv_jacobiano()
     xinit.getfunction(1)
     xinit.showInConsoleFunction(True)
+    #comentario prueba
     
 
 
