@@ -3,6 +3,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
+#bloque viejo (i >= 36 and i <= 58 and j >= 5 and j <= 8)
+
+def bloqueb(i, j):
+    return (i >= 58 and i <= 80 and j >= 5 and j <= 8)
+
+vij = 0.001
+
 class Vector:
 
     def __init__(self,n):
@@ -20,9 +27,9 @@ class Vector:
         for i in range (0, 81): 
             if (i % 10 == 9 and rango[k+1] != 0.1): k += 1
             for j in range (0, 9):
-                if (i == 0 or (j == 8 and i < 36)):
+                if (i == 0 or (j == 8 and i < 58)):
                     x0[j*81 + i] = V0
-                elif (j == 0 or i == 80 or (i >= 58 and j == 8) or (i >= 36 and i <= 58 and j >= 5 and j <= 8) or (i > 10 and i < 20 and j > 0 and j < 3)):
+                elif (j == 0 or i == 80 or (i >= 58 and j == 8) or bloqueb(i,j) or (i > 10 and i < 20 and j > 0 and j < 3)):
                     x0[j*81 + i] = 0
                 elif (i >= 58 and  j > 5 and j <= 8):
                     x0[j*81 + i] = random.uniform(rango[9], rango[10])
@@ -37,9 +44,9 @@ class Vector:
         x0 = self.vec
         for i in range (0, 81):
             for j in range (0, 9):
-                if (i == 0 or (j == 8 and i < 36)):
+                if (i == 0 or (j == 8 and i < 58)):
                     x0[j*81 + i] = V0
-                elif (j == 0 or i == 80 or (i >= 58 and j == 8) or (i >= 36 and i <= 58 and j >= 5 and j <= 8) or (i > 10 and i < 20 and j > 0 and j < 3)):
+                elif (j == 0 or i == 80 or (i >= 58 and j == 8) or bloqueb(i,j) or (i > 10 and i < 20 and j > 0 and j < 3)):
                     x0[j*81 + i] = 0
                 else:
                     x0[j*81 + i] = 1
@@ -47,14 +54,14 @@ class Vector:
 
     def cal_function(self):
         
-        val_Vij=0.01
+        val_Vij=vij
         x0=self.vec
 
         for i in range (0, 81): 
             for j in range (0, 9):
-                if (i == 0 or (j == 8 and i < 36)):
+                if (i == 0 or (j == 8 and i < 58)):
                     self.vectFunction[j*81 + i] = 0
-                elif (j == 0 or i == 80 or (i >= 58 and j == 8) or (i >= 36 and i <= 58 and j >= 5 and j <= 8) or (i > 10 and i < 20 and j > 0 and j < 3)):
+                elif (j == 0 or i == 80 or (i >= 58 and j == 8) or bloqueb(i,j) or (i > 10 and i < 20 and j > 0 and j < 3)):
                     self.vectFunction[j*81 + i] = 0
                 else:
                     self.vectFunction[j*81 + i] = 1/4 *( 
@@ -73,9 +80,11 @@ class Vector:
                     
                     
                     
-    def newVector(self):
-        xn = np.subtract(self.vec, np.matmul(self.matrixJacobiana, self.vectFunction))
-        
+    def newVector(self, alpha=1.0):
+        # Calcular la inversa del Jacobiano
+        jacobiano_inv = np.linalg.inv(self.matrixJacobiana)
+        # x_{n+1} = x_n - alpha * J^(-1) * F(x_n)
+        xn = np.subtract(self.vec, alpha * np.matmul(jacobiano_inv, self.vectFunction))
         self.vec = xn
 
     def showInConsole(self,condicion=False):
@@ -111,7 +120,7 @@ class Vector:
 
     def cal_jacobiano(self):
         
-        v_ij= 0.5
+        v_ij= vij
 
         vec_0=self.vec
         
@@ -119,7 +128,7 @@ class Vector:
         
         valores_derechos = [ecuacion * 81 - 1  for ecuacion in range(1, 10)]
         valores_bloque_A = [k * 81 + j for j in range(11,20) for k in range(0,3)]
-        valores_bloque_B = [k * 81 + j for j in range(36,58) for k in range(5,8)]
+        valores_bloque_B = [k * 81 + j for j in range(58,80) for k in range(5,8)]
         
         for ecuacion in range (729):
             if ((ecuacion % 81 == 0) or (ecuacion >= 0 and ecuacion<=81) or (ecuacion >= 81*8  and ecuacion<=728) or ecuacion in valores_derechos 
