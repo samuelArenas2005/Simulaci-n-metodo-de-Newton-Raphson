@@ -3,7 +3,7 @@ import numpy as np
 
 
 def main():
-    xinit = Vector(729)
+    """ xinit = Vector(729)
     xinit.vecInicial()
     
     max_iterations = 200
@@ -24,11 +24,19 @@ def main():
     else:
         print(f"No convergió después de {max_iterations} iteraciones")
     
-    xinit.showPlot(True)
+    xinit.showPlot(True) """
+    
+    valores_derechos = [ecuacion * 81 - 1  for ecuacion in range(1, 10)]
+    valores_bloque_A = [k * 81 + j for j in range(10,21) for k in range(0,3)]
+    valores_bloque_B = [k * 81 + j for j in range(58,80) for k in range(5,9)]
+    
+    for ecuacion in range (729):
+        if (ecuacion >= 81*8  and ecuacion<=728):
+            print(ecuacion)
 
 
-if __name__ == "__main__":
+""" if __name__ == "__main__":
     main()
 
-
+ """
 
