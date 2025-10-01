@@ -3,8 +3,8 @@ import numpy as np
 
 
 def main():
-    """ xinit = Vector(729)
-    xinit.vecInicial()
+    u = Vector(81, 9, [[10 ,20 ,0 ,2] , [58 ,80 ,5 ,9]], 1, 0.01, 5)
+    u.vecInicial()
     
     max_iterations = 200
     tolerance = 1e-7
@@ -13,30 +13,19 @@ def main():
     
     for i in range(max_iterations):
         print("Iteracion:", (i+1))
-        xinit.cal_function()
-        residuo_norm = np.linalg.norm(xinit.vectFunction)
+        u.cal_function()
+        residuo_norm = np.linalg.norm(u.vectFunction)
         print(f"  Norma del residuo: {residuo_norm}")
         if residuo_norm < tolerance:
             print(f"¡Convergencia alcanzada en {i + 1} iteraciones!")
             break
-        xinit.cal_jacobiano()   
-        xinit.newVector()
+        u.cal_jacobiano()   
+        u.newVector()
     else:
         print(f"No convergió después de {max_iterations} iteraciones")
     
-    xinit.showPlot(True) """
-    
-    valores_derechos = [ecuacion * 81 - 1  for ecuacion in range(1, 10)]
-    valores_bloque_A = [k * 81 + j for j in range(10,21) for k in range(0,3)]
-    valores_bloque_B = [k * 81 + j for j in range(58,80) for k in range(5,9)]
-    
-    for ecuacion in range (729):
-        if (ecuacion >= 81*8  and ecuacion<=728):
-            print(ecuacion)
+    u.showPlot(True)
 
+main()
 
-""" if __name__ == "__main__":
-    main()
-
- """
 
