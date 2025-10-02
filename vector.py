@@ -155,3 +155,175 @@ class Vector:
             plt.xlabel("i (x)")
             plt.ylabel("j (y)")
             plt.show()
+
+    def showPlotDetail(self, condicion=False):
+        """Muestra un plot detallado con valores en cada celda y cuadrícula"""
+        if condicion:
+            x0 = self.vec
+            NX, NY = self.Nx, self.Ny
+            matriz = np.array(x0).reshape(NY, NX)
+
+            # --- tamaño dinámico basado en dimensiones de la clase ---
+            escala = max(0.3, min(0.8, 30 / max(NX, NY)))  # Escala adaptativa
+            plt.figure(figsize=(NX * escala, NY * escala))
+
+            cmap = plt.cm.viridis
+            im = plt.imshow(matriz, cmap=cmap, vmin=0.0001, vmax=self.V0, origin="lower")
+
+            plt.colorbar(im, label="u valores")
+            plt.title(f"Valores detallados en la malla ({NX}x{NY})")
+            plt.xlabel("i (x)")
+            plt.ylabel("j (y)")
+
+            # cuadrícula
+            ax = plt.gca()
+            ax.set_xticks(np.arange(-0.5, NX, 1), minor=True)
+            ax.set_yticks(np.arange(-0.5, NY, 1), minor=True)
+            ax.grid(which="minor", color="white", linestyle='-', linewidth=0.5)
+            ax.tick_params(which="minor", bottom=False, left=False)
+
+            # escribir valores en cada celda (solo si la malla no es muy grande)
+            if NX * NY <= 200:  # Evitar texto ilegible en mallas muy grandes
+                fontsize = max(6, min(12, 300 / max(NX, NY)))
+                for i in range(NY):
+                    for j in range(NX):
+                        valor = matriz[i, j]
+                        if abs(valor) < 1e-10:
+                            texto = "0"
+                        elif abs(valor - round(valor)) < 1e-10:
+                            texto = f"{int(round(valor))}"
+                        else:
+                            texto = f"{valor:.2f}"
+                            if texto.startswith("0."):
+                                texto = texto[1:]  # quita el "0", deja ".xx"
+
+                        # si es cero → texto gris oscuro, sino blanco
+                        color_texto = "#333333" if abs(valor) < 1e-10 else "white"
+
+                        plt.text(j, i, texto, ha="center", va="center",
+                                color=color_texto, fontsize=fontsize)
+            plt.show()
+
+    def showPlotDetailFunc(self, condicion=False):
+        """Muestra un plot detallado del vector función con valores en cada celda"""
+        if condicion:
+            x0 = self.vectFunction
+            NX, NY = self.Nx, self.Ny
+            matriz = np.array(x0).reshape(NY, NX)
+
+            # --- tamaño dinámico basado en dimensiones de la clase ---
+            escala = max(0.3, min(0.8, 30 / max(NX, NY)))  # Escala adaptativa
+            plt.figure(figsize=(NX * escala, NY * escala))
+
+            # Usar rango automático para mejor visualización del residuo
+            vmin, vmax = np.min(matriz), np.max(matriz)
+            if abs(vmax - vmin) < 1e-10:  # Si todos los valores son iguales
+                vmin, vmax = vmin - 0.1, vmax + 0.1
+
+            cmap = plt.cm.RdBu_r  # Colormap centrado en cero para residuos
+            im = plt.imshow(matriz, cmap=cmap, vmin=vmin, vmax=vmax, origin="lower")
+
+            plt.colorbar(im, label="Residuo F(u)")
+            plt.title(f"Residuos F(u) en la malla ({NX}x{NY})")
+            plt.xlabel("i (x)")
+            plt.ylabel("j (y)")
+
+            # cuadrícula
+            ax = plt.gca()
+            ax.set_xticks(np.arange(-0.5, NX, 1), minor=True)
+            ax.set_yticks(np.arange(-0.5, NY, 1), minor=True)
+            ax.grid(which="minor", color="white", linestyle='-', linewidth=0.5)
+            ax.tick_params(which="minor", bottom=False, left=False)
+
+            # escribir valores en cada celda (solo si la malla no es muy grande)
+            if NX * NY <= 200:  # Evitar texto ilegible en mallas muy grandes
+                fontsize = max(6, min(12, 300 / max(NX, NY)))
+                for i in range(NY):
+                    for j in range(NX):
+                        valor = matriz[i, j]
+                        if abs(valor) < 1e-10:
+                            texto = "0"
+                        else:
+                            texto = f"{valor:.2e}"
+
+                        # Color de texto basado en el valor
+                        color_texto = "white" if abs(valor) < abs(vmax) * 0.3 else "black"
+
+                        plt.text(j, i, texto, ha="center", va="center",
+                                color=color_texto, fontsize=fontsize)
+            plt.show()
+
+    def showPlotIndices(self, condicion=False):
+        """Muestra la malla con los índices de cada nodo"""
+        if condicion:
+            x0 = self.vec
+            NX, NY = self.Nx, self.Ny
+            matriz = np.array(x0).reshape(NY, NX)
+
+            escala = max(0.3, min(0.8, 30 / max(NX, NY)))  # Escala adaptativa
+            plt.figure(figsize=(NX * escala, NY * escala))
+            cmap = plt.cm.viridis
+
+            im = plt.imshow(matriz, cmap=cmap, vmin=0.0001, vmax=self.V0, origin="lower")
+
+            plt.colorbar(im, label="u valores")
+            plt.title(f"Índices de nodos en la malla ({NX}x{NY})")
+            plt.xlabel("i (x)")
+            plt.ylabel("j (y)")
+
+            # Dibujar bordes de cada celda
+            for i in range(NX + 1):
+                plt.axvline(i - 0.5, color='gray', linewidth=0.3)
+            for j in range(NY + 1):
+                plt.axhline(j - 0.5, color='gray', linewidth=0.3)
+
+            # Colocar el índice en cada celda (solo si no es muy grande)
+            if NX * NY <= 500:  # Evitar sobrecargar la visualización
+                fontsize = max(4, min(10, 200 / max(NX, NY)))
+                for j in range(NY):
+                    for i in range(NX):
+                        idx = j * NX + i
+                        plt.text(i, j, str(idx),
+                                ha='center', va='center',
+                                color='white', fontsize=fontsize, 
+                                weight='bold')
+
+            # ticks que correspondan exactamente a los cuadros
+            plt.xticks(np.arange(NX), np.arange(NX))
+            plt.yticks(np.arange(NY), np.arange(NY))
+            plt.show()
+
+    def visualizar_jacobiana(self, titulo="Matriz Jacobiana", guardar=False, nombre_archivo="jacobiana.png"):
+        """Visualiza la matriz jacobiana como una imagen de calor"""
+        n = self.Nx * self.Ny
+        fig, ax = plt.subplots(figsize=(min(15, max(8, n/50)), min(15, max(8, n/50))))
+
+        # Crear mapa de calor
+        im = ax.imshow(self.matrixJacobiana, cmap='RdBu_r', aspect='equal')
+
+        # Configurar barra de colores
+        cbar = plt.colorbar(im, ax=ax, shrink=0.8)
+        cbar.set_label('Valor', rotation=270, labelpad=20)
+
+        # Configurar ejes
+        ax.set_xlabel('Índice de Columna', fontsize=12)
+        ax.set_ylabel('Índice de Fila', fontsize=12)
+        ax.set_title(f"{titulo} ({n}x{n})", fontsize=14, fontweight='bold')
+
+        # Configurar ticks para matrices no muy grandes
+        if n <= 100:
+            ax.tick_params(axis='both', which='major', labelsize=8)
+        else:
+            # Para matrices grandes, mostrar menos ticks
+            tick_step = max(1, n // 20)
+            ax.set_xticks(range(0, n, tick_step))
+            ax.set_yticks(range(0, n, tick_step))
+            ax.tick_params(axis='both', which='major', labelsize=8)
+
+        plt.tight_layout()
+
+        if guardar:
+            plt.savefig(nombre_archivo, dpi=300, bbox_inches='tight')
+            print(f"Visualización guardada como: {nombre_archivo}")
+        
+        plt.show()
