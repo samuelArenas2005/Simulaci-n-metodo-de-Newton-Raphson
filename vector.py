@@ -119,14 +119,10 @@ class Vector:
                     # Derivada respecto a u_{k-Nx} (vecino inferior)
                     J[index, index - Nx] = 0.25 + h_div_8 * self.v_ij
 
-    def cal_inv_jacobiano(self):
-        self.matrixJacobiana =  np.linalg.inv(self.matrixJacobiana)
-
-    def newVector(self, alpha=1.0):
+    def newVector(self):
         # Calcular la inversa del Jacobiano
         jacobiano_inv = np.linalg.inv(self.matrixJacobiana)
-        # x_{n+1} = x_n - alpha * J^(-1) * F(x_n)
-        xn = np.subtract(self.vec, alpha * np.matmul(jacobiano_inv, self.vectFunction))
+        xn = np.subtract(self.vec, np.matmul(jacobiano_inv, self.vectFunction))
         self.vec = xn
                 
                 
