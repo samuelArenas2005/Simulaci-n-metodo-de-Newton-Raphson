@@ -57,6 +57,7 @@ class Vector:
     def newVector(self):
         print("Aqui va la logica recursiva")
         
+        #comentario prueba
         
                     
     def showInConsole(self,condicion=False):
