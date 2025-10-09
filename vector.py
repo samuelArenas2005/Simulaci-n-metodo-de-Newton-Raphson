@@ -25,6 +25,7 @@ class Vector:
                     
 
     def vecInicial(self):
+        print("a")
         for j in range(self.Ny):
             for i in range(self.Nx):
                 index = j * self.Nx + i

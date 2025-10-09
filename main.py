@@ -3,12 +3,8 @@ import numpy as np
 
 
 def main():
-    u = Vector(Nx = 81, Ny = 9, blocks = [[10 ,20 ,0 ,2] , [58 ,80 ,5 ,9]], V0 = 1, v_ij = 0.01, h = 5)
+    u = Vector(Nx = 81, Ny = 9, blocks = [[10 ,20 ,0 ,2] , [58 ,80 ,5 ,8]], V0 = 1, v_ij = 0.01, h = 5)
     u.vecInicial()
-
-    u.showPlotDetail(True)
-    u.showPlot(True)
-    u.showPlotIndices(True)
     
     max_iterations = 200
     epsilon = 1e-7
@@ -51,9 +47,6 @@ def main():
         u.newVector()
     else:
         print(f"No convergió después de {max_iterations} iteraciones")
-    
-    u.showPlotDetail(True)
     u.showPlot(True)
-    u.showPlotIndices(True)
 
 main()
