@@ -125,6 +125,19 @@ class Vector:
         jacobiano_inv = np.linalg.inv(self.matrixJacobiana)
         xn = np.subtract(self.vec, np.matmul(jacobiano_inv, self.vectFunction))
         self.vec = xn
+
+    def is_jacobi(self, A):
+        for i in range(len(A)):
+            sumRow = 0
+            a_ii = 0
+            for j in range(len(A[i])):
+                if(i != j):
+                    sumRow += A[i,j]
+                else:
+                    a_ii = A[i,j]
+            if(sumRow > a_ii):
+                return False
+        return True
                 
                 
     def showPlot(self, condicion=True):
