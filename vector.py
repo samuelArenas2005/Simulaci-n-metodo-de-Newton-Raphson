@@ -120,11 +120,53 @@ class Vector:
                     # Derivada respecto a u_{k-Nx} (vecino inferior)
                     J[index, index - Nx] = 0.25 + h_div_8 * self.v_ij
 
+    def gradienteConjugado(self, M, e):
+      #M es numero de paradas
+        x= np.zeros(729)
+
+        j= self.matrixJacobiana
+        jt= np.transpose(j)
+        A= np.matmul(jt,j)
+        b= np.matmul(-jt,self.vectFunction)
+        rOld= b
+        rNew= 0
+        vNew = 0
+        vOld= rOld.copy()
+        tk= 0
+        xNew= x.copy()
+        sk=0
+
+        for i in range(M-1):
+
+    
+                tk= np.dot(rOld,rOld) / np.dot(vOld, np.matmul(A,vOld))
+                xNew=xNew + tk*vOld
+                rNew=rOld -tk*np.matmul(A,vOld)
+                #esta parte me la dijo chat
+                if np.linalg.norm(rNew) < e:  # criterio de convergencia
+                    print("COnvergio por nombra el residuo en iteracion:", i+1)
+                    break
+                sk=np.dot(rNew,rNew)/np.dot(rOld,rOld)
+                vNew=rNew+sk*vOld
+                
+                rOld=rNew
+                vOld=vNew
+        return xNew
+
+
+
+
+       
+
+    def newVectorInversa(self):
+        jacobianaInversa = np.linalg.inv(self.matrixJacobiana)
+        self.vec = np.subtract(self.vec,np.matmul(jacobianaInversa,self.vectFunction))
+    
     def newVector(self):
-        # Calcular la inversa del Jacobiano
-        jacobiano_inv = np.linalg.inv(self.matrixJacobiana)
-        xn = np.subtract(self.vec, np.matmul(jacobiano_inv, self.vectFunction))
-        self.vec = xn
+        h = self.gradienteConjugado(729,1e-16)
+        self.vec = self.vec + h
+
+        
 
     def is_jacobi(self, A):
         for i in range(len(A)):
