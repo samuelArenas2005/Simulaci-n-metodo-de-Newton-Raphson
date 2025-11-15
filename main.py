@@ -82,7 +82,11 @@ def main():
         uOld.newVectorInversa()
     else:
         print(f"No convergió después de {max_iterations} iteraciones")
-    
+    print("La vaina es:")
+    print ( np.linalg.norm(u.vec-uOld.vec))
     u.showPlot(True)
+
+
+
 
 main()
