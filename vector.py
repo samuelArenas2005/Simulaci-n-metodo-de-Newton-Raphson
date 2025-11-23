@@ -1,10 +1,12 @@
 import random
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.interpolate import CubicSpline,RegularGridInterpolator
 
-class Vector:
+class NewtonRaphson:
 
-    def __init__(self,Nx, Ny, blocks, V0, v_ij, h):
+    #Valores iniciales de nuestra simulación que permite 
+    def __init__(self,Nx, Ny, blocks, V0, v_ij, h,v0ParedSuperior):
         n = Nx * Ny
         self.Nx = Nx
         self.Ny = Ny
@@ -15,31 +17,38 @@ class Vector:
         self.vec = np.zeros(n)
         self.vectFunction = np.zeros(n)
         self.matrixJacobiana = np.zeros((n,n))
+        self.v0ParedSuperior = v0ParedSuperior
     
+    # Método que verifica si un nodo esta dentro de un bloque
     def _is_in_block(self, i, j):
         for block in self.blocks:
             x1, x2, y1, y2 = block
             if x1 <= i <= x2 and y1 <= j <= y2:
                 return True
         return False
+    
+    """ FUNCIONES PRINCIPALES PARA LA SOLUCIÓN DE SISTEMA DE ECUACIONES NO LINEALES MEDIANTE EL MÉTODO DE NEWTON RAPHSON"""
                     
-
+    #Establece los valores del vector inicial
     def vecInicial(self):
-        print("a")
         for j in range(self.Ny):
             for i in range(self.Nx):
                 index = j * self.Nx + i
 
                 # 1. Comprobar si el nodo está dentro de alguno de los bloques.
-                if self._is_in_block(i, j) or i == self.Nx - 1 or j == 0:
+                if self._is_in_block(i, j) or i == self.Nx - 1 or j == 0 :
                     self.vec[index] = 0
                 
                 # 2. Establecer condiciones de frontera si no está en un bloque.
                 # Borde izquierdo y superior (entrada de flujo).
-                elif i == 0 or j == self.Ny - 1:
+                elif i == 0 :
                     self.vec[index] = self.V0
+                
+                #3. Caso aislado para la pared superior
+                elif j == self.Ny - 1:
+                    self.vec[index] = self.v0ParedSuperior
 
-                # 3. Si no es frontera ni bloque, es un nodo interior del fluido.
+                # 4. Si no es frontera ni bloque, es un nodo interior del fluido.
                 else:
                     # Se crea un gradiente de velocidad lineal de izquierda a derecha
                     # para tener una suposición inicial más realista.
@@ -50,6 +59,7 @@ class Vector:
                     
                     self.vec[index] = gradiente_lineal + variacion
 
+    #Calcula el vector F(uk) de la iteración k 
     def cal_function(self):
         # Para mayor claridad, creamos alias para las variables de la clase.
         u = self.vec
@@ -67,7 +77,7 @@ class Vector:
                 # Para nodos en fronteras con valor fijo o dentro de bloques,
                 # el residual es cero, ya que la ecuacion es u_ij = Cte.
                 if self._is_in_block(i, j) or i == 0 or j == 0 or i == Nx - 1 or j == Ny - 1:
-                    F[index] = 0
+                    F[index] = 0            
                 
                 # 3. Para nodos interiores, aplicamos la ecuacion discretizada.
                 # La ecuacion residual es F(u) = (Ecuacion Discretizada) - u_ij = 0
@@ -79,6 +89,7 @@ class Vector:
                         - (h/2) * self.v_ij * (u[index + Nx] - u[index - Nx])
                     ) - u[index]
 
+    #Calcula el jacobiano J(uk) de la iteración k 
     def cal_jacobiano(self):
         u = self.vec
         J = self.matrixJacobiana
@@ -98,7 +109,7 @@ class Vector:
                 # 1. Para nodos en fronteras o bloques, la ecuacion es u_k = Cte.
                 # La derivada de u_k con respecto a u_k es 1. El resto son 0.
                 if self._is_in_block(i, j) or i == 0 or j == 0 or i == Nx - 1 or j == Ny - 1:
-                    J[index, index] = 1.0
+                    J[index, index] = 1.0     
                 
                 # 3. Para nodos interiores, calculamos las 5 derivadas parciales no nulas.
                 else:
@@ -119,56 +130,59 @@ class Vector:
                     
                     # Derivada respecto a u_{k-Nx} (vecino inferior)
                     J[index, index - Nx] = 0.25 + h_div_8 * self.v_ij
-
+                    
+                    
+    #Calcula el valor de H mediante el gradienteConjugado como método para la solución de sistema de ecuaciones lineales
     def gradienteConjugado(self, M, e):
-      #M es numero de paradas
-        x= np.zeros(729)
-
+        #M es numero de paradas
         j= self.matrixJacobiana
         jt= np.transpose(j)
-        A= np.matmul(jt,j)
-        b= np.matmul(-jt,self.vectFunction)
+        
+        #Valores iniciales del método
+        A= np.matmul(jt,j) #Nuestra nueva matrix A, 
+                            #obtenida de multiplicar la transpuerta del jacobiano por el jacobiano para que converga
+        b= np.matmul(-jt,self.vectFunction) 
+        
         rOld= b
         rNew= 0
         vNew = 0
         vOld= rOld.copy()
+        
+    
         tk= 0
-        xNew= x.copy()
+        xNew= np.zeros(self.Nx*self.Ny)
         sk=0
 
+        #Iteración principal del método del gradiente conjugado
         for i in range(M-1):
-
-    
-                tk= np.dot(rOld,rOld) / np.dot(vOld, np.matmul(A,vOld))
-                xNew=xNew + tk*vOld
-                rNew=rOld -tk*np.matmul(A,vOld)
-                #esta parte me la dijo chat
-                if np.linalg.norm(rNew) < e:  # criterio de convergencia
-                    print("COnvergio por nombra el residuo en iteracion:", i+1)
+                tk= np.dot(rOld,rOld) / np.dot(vOld, np.matmul(A,vOld)) #Calculo de la tasa de aprendizaje
+                xNew=xNew + tk*vOld                                     #Calculo del nuevo vector resultante
+                rNew=rOld -tk*np.matmul(A,vOld)                         #Calculo del nuevo residuo
+                if np.linalg.norm(rNew) < e:                            #Si el residuo es pequeño entonces para las iteraciones
+                    print("Convergio por norma el residuo en iteracion:", i+1)
                     break
-                sk=np.dot(rNew,rNew)/np.dot(rOld,rOld)
-                vNew=rNew+sk*vOld
+                sk=np.dot(rNew,rNew)/np.dot(rOld,rOld)                  #Calculo de la nueva tasa de dirección
+                vNew=rNew+sk*vOld                                       #Calculo de la nueva direccion de convergencia
                 
                 rOld=rNew
                 vOld=vNew
-        return xNew
+        return xNew       #Retorno el valor obtenido que sera el H del método de Newthon Raphson 
 
-
-
-
-       
-
+    #Calculo del nuevo vector en cada iteración de Newthon Raphson utilizando el sistema de ecuaciones lineales para hallar H 
+    def newVector(self): 
+        h = self.gradienteConjugado(self.Nx*self.Ny,1e-16)
+        self.vec = self.vec + h
+        
+    #Calculo del nuevo vector en cada iteración de Newthon Raphson utilizando la inversa del jacobiano
     def newVectorInversa(self):
         jacobianaInversa = np.linalg.inv(self.matrixJacobiana)
         self.vec = np.subtract(self.vec,np.matmul(jacobianaInversa,self.vectFunction))
     
-    def newVector(self):
-        h = self.gradienteConjugado(729,1e-16)
-        self.vec = self.vec + h
-
-        
-
-    def is_jacobi(self, A):
+    
+    """COMPROBACIÓN DE LA CONVERGENCIA PARA MÉTODOS ITERATIVOS PARA LA SOLUCIÓN DE SISTEMAS DE ECUACIONES LINEALES"""
+    
+    #Método que verifica si una matriz A es diagonalmente dominante (jacobin y gauss-seidel)
+    def is_diagonally_dominant(self, A):
         for i in range(len(A)):
             sumRow = 0
             a_ii = 0
@@ -180,202 +194,48 @@ class Vector:
             if(sumRow > a_ii):
                 return False
         return True
-                
-                
-    def showPlot(self, condicion=True):
-        if condicion:
-            x0 = self.vec
-            # --- visualización ---
-            # Usar las dimensiones de la clase en lugar de valores hardcodeados
-            NX, NY = self.Nx, self.Ny
-            matriz = np.array(x0).reshape(NY, NX)
+    
+    #Chequea si la matriz A del sistema de ecuaciones converge, mediante el teorema de convergencia ||(I-Q^(-1)A)|| < 1 (richarson, jacobi, gauss-seidel)
+    def check_convergence_theorem(self, metodo):
+        Q = np.eye(len(self.matrixJacobiana))
+        norm = np.subtract(Q, self.matrixJacobiana)
+        #Sacal la nomra 1, la de la suma de colmnas
+        return np.linalg.norm(norm, 1) <= 1
+    
+    #Determina el numero de condicion de nuestra matriz jacobiana
+    def cal_numeroCondicion(self):
+        jacobiano = self.matrixJacobiana
+        jacobianoTranspuesto = jacobiano.T
+        jaconew = (jacobianoTranspuesto + jacobiano)/2
+        U,S,T = np.linalg.svd(jaconew)
 
-            # crear un mapa de calor con tamaño proporcional a las dimensiones
-            fig_width = max(10, NX * 0.15)  # Ancho mínimo 10, escalado con NX
-            fig_height = max(3, NY * 0.5)   # Alto mínimo 3, escalado con NY
-            plt.figure(figsize=(fig_width, fig_height))
-            
-            cmap = plt.cm.viridis  # colormap principal
+        numeroSingularMax = np.max(S)
+        numeroSingularMin = np.min(S)
+        numeroCondicion = numeroSingularMax/numeroSingularMin
 
-            # plot con imshow
-            im = plt.imshow(matriz[::-1], cmap=cmap, vmin=0.0001, vmax=self.V0)  
-            # matriz[::-1] → para que se vea de abajo hacia arriba (como ejes cartesianos)
-            # vmax usa V0 en lugar de 1 hardcodeado
+        return numeroCondicion,numeroSingularMax,numeroSingularMin
 
-            plt.colorbar(im, label="u valores")
-            plt.title(f"Distribución de valores en la malla ({NX}x{NY})")
-            plt.xlabel("i (x)")
-            plt.ylabel("j (y)")
-            plt.show()
+    #Verifica si una matriz es simetrica, necesario para la convergencia de los métodos de krilov (Gradiente desce y Gradiente conjugado)
+    def is_Simetric(self):
+        transpose = np.transpose(self.matrixJacobiana)
+        return np.allclose(transpose, self.matrixJacobiana)
 
-    def showPlotDetail(self, condicion=False):
-        """Muestra un plot detallado con valores en cada celda y cuadrícula"""
-        if condicion:
-            x0 = self.vec
-            NX, NY = self.Nx, self.Ny
-            matriz = np.array(x0).reshape(NY, NX)
-
-            # --- tamaño dinámico basado en dimensiones de la clase ---
-            escala = max(0.3, min(0.8, 30 / max(NX, NY)))  # Escala adaptativa
-            plt.figure(figsize=(NX * escala, NY * escala))
-
-            cmap = plt.cm.viridis
-            im = plt.imshow(matriz, cmap=cmap, vmin=0.0001, vmax=self.V0, origin="lower")
-
-            plt.colorbar(im, label="u valores")
-            plt.title(f"Valores detallados en la malla ({NX}x{NY})")
-            plt.xlabel("i (x)")
-            plt.ylabel("j (y)")
-
-            # cuadrícula
-            ax = plt.gca()
-            ax.set_xticks(np.arange(-0.5, NX, 1), minor=True)
-            ax.set_yticks(np.arange(-0.5, NY, 1), minor=True)
-            ax.grid(which="minor", color="white", linestyle='-', linewidth=0.5)
-            ax.tick_params(which="minor", bottom=False, left=False)
-
-            # escribir valores en cada celda (solo si la malla no es muy grande)
-            if NX * NY <= 200:  # Evitar texto ilegible en mallas muy grandes
-                fontsize = max(6, min(12, 300 / max(NX, NY)))
-                for i in range(NY):
-                    for j in range(NX):
-                        valor = matriz[i, j]
-                        if abs(valor) < 1e-10:
-                            texto = "0"
-                        elif abs(valor - round(valor)) < 1e-10:
-                            texto = f"{int(round(valor))}"
-                        else:
-                            texto = f"{valor:.2f}"
-                            if texto.startswith("0."):
-                                texto = texto[1:]  # quita el "0", deja ".xx"
-
-                        # si es cero → texto gris oscuro, sino blanco
-                        color_texto = "#333333" if abs(valor) < 1e-10 else "white"
-
-                        plt.text(j, i, texto, ha="center", va="center",
-                                color=color_texto, fontsize=fontsize)
-            plt.show()
-
-    def showPlotDetailFunc(self, condicion=False):
-        """Muestra un plot detallado del vector función con valores en cada celda"""
-        if condicion:
-            x0 = self.vectFunction
-            NX, NY = self.Nx, self.Ny
-            matriz = np.array(x0).reshape(NY, NX)
-
-            # --- tamaño dinámico basado en dimensiones de la clase ---
-            escala = max(0.3, min(0.8, 30 / max(NX, NY)))  # Escala adaptativa
-            plt.figure(figsize=(NX * escala, NY * escala))
-
-            # Usar rango automático para mejor visualización del residuo
-            vmin, vmax = np.min(matriz), np.max(matriz)
-            if abs(vmax - vmin) < 1e-10:  # Si todos los valores son iguales
-                vmin, vmax = vmin - 0.1, vmax + 0.1
-
-            cmap = plt.cm.RdBu_r  # Colormap centrado en cero para residuos
-            im = plt.imshow(matriz, cmap=cmap, vmin=vmin, vmax=vmax, origin="lower")
-
-            plt.colorbar(im, label="Residuo F(u)")
-            plt.title(f"Residuos F(u) en la malla ({NX}x{NY})")
-            plt.xlabel("i (x)")
-            plt.ylabel("j (y)")
-
-            # cuadrícula
-            ax = plt.gca()
-            ax.set_xticks(np.arange(-0.5, NX, 1), minor=True)
-            ax.set_yticks(np.arange(-0.5, NY, 1), minor=True)
-            ax.grid(which="minor", color="white", linestyle='-', linewidth=0.5)
-            ax.tick_params(which="minor", bottom=False, left=False)
-
-            # escribir valores en cada celda (solo si la malla no es muy grande)
-            if NX * NY <= 200:  # Evitar texto ilegible en mallas muy grandes
-                fontsize = max(6, min(12, 300 / max(NX, NY)))
-                for i in range(NY):
-                    for j in range(NX):
-                        valor = matriz[i, j]
-                        if abs(valor) < 1e-10:
-                            texto = "0"
-                        else:
-                            texto = f"{valor:.2e}"
-
-                        # Color de texto basado en el valor
-                        color_texto = "white" if abs(valor) < abs(vmax) * 0.3 else "black"
-
-                        plt.text(j, i, texto, ha="center", va="center",
-                                color=color_texto, fontsize=fontsize)
-            plt.show()
-
-    def showPlotIndices(self, condicion=False):
-        """Muestra la malla con los índices de cada nodo"""
-        if condicion:
-            x0 = self.vec
-            NX, NY = self.Nx, self.Ny
-            matriz = np.array(x0).reshape(NY, NX)
-
-            escala = max(0.3, min(0.8, 30 / max(NX, NY)))  # Escala adaptativa
-            plt.figure(figsize=(NX * escala, NY * escala))
-            cmap = plt.cm.viridis
-
-            im = plt.imshow(matriz, cmap=cmap, vmin=0.0001, vmax=self.V0, origin="lower")
-
-            plt.colorbar(im, label="u valores")
-            plt.title(f"Índices de nodos en la malla ({NX}x{NY})")
-            plt.xlabel("i (x)")
-            plt.ylabel("j (y)")
-
-            # Dibujar bordes de cada celda
-            for i in range(NX + 1):
-                plt.axvline(i - 0.5, color='gray', linewidth=0.3)
-            for j in range(NY + 1):
-                plt.axhline(j - 0.5, color='gray', linewidth=0.3)
-
-            # Colocar el índice en cada celda (solo si no es muy grande)
-            if NX * NY <= 500:  # Evitar sobrecargar la visualización
-                fontsize = max(4, min(10, 200 / max(NX, NY)))
-                for j in range(NY):
-                    for i in range(NX):
-                        idx = j * NX + i
-                        plt.text(i, j, str(idx),
-                                ha='center', va='center',
-                                color='white', fontsize=fontsize, 
-                                weight='bold')
-
-            # ticks que correspondan exactamente a los cuadros
-            plt.xticks(np.arange(NX), np.arange(NX))
-            plt.yticks(np.arange(NY), np.arange(NY))
-            plt.show()
-
-    def visualizar_jacobiana(self, titulo="Matriz Jacobiana", guardar=False, nombre_archivo="jacobiana.png"):
-        """Visualiza la matriz jacobiana como una imagen de calor"""
-        n = self.Nx * self.Ny
-        fig, ax = plt.subplots(figsize=(min(15, max(8, n/50)), min(15, max(8, n/50))))
-
-        # Crear mapa de calor
-        im = ax.imshow(self.matrixJacobiana, cmap='RdBu_r', aspect='equal')
-
-        # Configurar barra de colores
-        cbar = plt.colorbar(im, ax=ax, shrink=0.8)
-        cbar.set_label('Valor', rotation=270, labelpad=20)
-
-        # Configurar ejes
-        ax.set_xlabel('Índice de Columna', fontsize=12)
-        ax.set_ylabel('Índice de Fila', fontsize=12)
-        ax.set_title(f"{titulo} ({n}x{n})", fontsize=14, fontweight='bold')
-
-        # Configurar ticks para matrices no muy grandes
-        if n <= 100:
-            ax.tick_params(axis='both', which='major', labelsize=8)
-        else:
-            # Para matrices grandes, mostrar menos ticks
-            tick_step = max(1, n // 20)
-            ax.set_xticks(range(0, n, tick_step))
-            ax.set_yticks(range(0, n, tick_step))
-            ax.tick_params(axis='both', which='major', labelsize=8)
-
-        plt.tight_layout()
-
-        if guardar:
-            plt.savefig(nombre_archivo, dpi=300, bbox_inches='tight')
-            print(f"Visualización guardada como: {nombre_archivo}")
+    
+    """IMPLEMENTACIÓN SPLINES CUBICOS NATURALES"""
+    
+    def construir_spline_natural(self):
+        """
+        Construye un spline cúbico natural 1D a partir del vector de velocidades.
+        Utiliza splines cúbicos naturales (segunda derivada = 0 en los bordes)
+        interpolando primero en dirección x y luego en dirección y.
         
-        plt.show()
+        Retorna:
+            spline_object: Objeto con método evaluate(x, y) para evaluar la velocidad
+                    en cualquier punto (x, y) del dominio.
+        """
+        x = np.arange(self.Nx * self.Ny)
+        y = self.vec
+
+        cs = CubicSpline(x, y, bc_type='natural')
+        
+        return cs
