@@ -4,53 +4,6 @@ from interfaz import SimulationViewer, view_heatmap, view_spline_static, view_an
 
 import numpy as np
 
-#Metodo de iteraciones de Newton Raphson para animacion que guarda un historial de cada iteración
-def iteration_con_historial(NewtonRaphson, callNewVector):
-    # Configuración
-    NewtonRaphson.vecInicial()
-    max_iterations = 200
-    epsilon = 1e-13
-    delta = 1e-13
-    
-    historial = [] # Aquí guardaremos las "fotos" de la simulación
-    
-    # Guardamos el estado inicial (Iteración 0)
-    historial.append(NewtonRaphson.vec.copy())
-    
-    print(f"\nCalculando historial con {callNewVector}...")
-    
-    vec_anterior = None
-    
-    for i in range(max_iterations):
-        # --- LÓGICA MATEMÁTICA (Igual que siempre) ---
-        if vec_anterior is not None:
-            cambio_norm = np.linalg.norm(NewtonRaphson.vec - vec_anterior)
-            if cambio_norm < delta:
-                print(f"Convergió por delta en iteración {i+1}")
-                break
-
-        NewtonRaphson.cal_function()
-        residuo_norm = np.linalg.norm(NewtonRaphson.vectFunction)
-        
-        if residuo_norm < epsilon:
-            print(f"Convergió por residuo en iteración {i+1}")
-            break
-        
-        vec_anterior = NewtonRaphson.vec.copy()
-        
-        NewtonRaphson.cal_jacobiano()
-        if callNewVector == "gradienteConjugado":
-            NewtonRaphson.newVector()
-        else:
-            NewtonRaphson.newVectorInversa()
-            
-        # --- GUARDADO ---
-        # Guardamos una COPIA del vector actual en la lista
-        historial.append(NewtonRaphson.vec.copy())
-    
-    # Retornamos la lista con todos los pasos
-    return historial
-
 #Método de configuración que permite expandir el número de nodos 
 def get_scaled_config(factor):
     """
@@ -93,12 +46,17 @@ def get_scaled_config(factor):
     return Nx_new, Ny_new, h_new, blocks_new
 
 #Metodo de iteraciones de Newton Raphson AQUI ESTA TODA LA LOGICA DEL ALGORITMO PROGRAMADA
-def iteration(NewtonRaphson,callNewVector):
+def iteration(NewtonRaphson,callNewVector,saveHistory=False):
     
     #Condiciones de parada
     max_iterations = 200
     epsilon = 1e-13
     delta = 1e-13
+    
+    if saveHistory : NewtonRaphson.vecInicial()
+    historial = [] # Aquí se guardan las "fotos" de la simulación
+    # Guardamos el estado inicial (Iteración 0)
+    historial.append(NewtonRaphson.vec.copy())
     
     print("\nIniciando método de Newton-Raphson con el método del", callNewVector )
     print(f"Tolerancia residuo (epsilon): {epsilon}")
@@ -135,8 +93,11 @@ def iteration(NewtonRaphson,callNewVector):
         
         NewtonRaphson.cal_jacobiano()  
         (NewtonRaphson.newVector() if callNewVector == "gradiente Conjugado" else NewtonRaphson.newVectorInversa())
+        historial.append(NewtonRaphson.vec.copy())
     else:
         print(f"No convergió después de {max_iterations} iteraciones")
+    
+    return historial
     
 #Metodo principal que se encarga de ejecutar las iteraciones de Newton Rhapson
 def main():
@@ -228,7 +189,7 @@ def main():
         iteration(NewtonRaphsonItGCA2,"gradiente Conjugado")
         iteration(NewtonRaphsonItGCA3,"gradiente Conjugado")
         
-        historial_pasosA =  iteration_con_historial(NewtonRaphsonItGCA, "gradienteConjugado")
+        historial_pasosA =  iteration(NewtonRaphsonItGCA, "gradiente Conjugado",True)
         
         #Instancias PLOT
         plotNewtonRaphsonItGCA = Plot(NewtonRaphsonItGCA)
@@ -277,13 +238,13 @@ def main():
     # GRAFICAS SIMULACION B
     # ---------------------------------------------------------------------------
     
-    def generateSimulationB(show):
+    def generateSimulationB(show,metodo):
         if not show : return 
-        iteration(NewtonRaphsonItGCB,"gradiente Conjugado")
-        iteration(NewtonRaphsonItGCB2,"gradiente Conjugado")
-        iteration(NewtonRaphsonItGCB3,"gradiente Conjugado")
+        iteration(NewtonRaphsonItGCB,metodo)
+        iteration(NewtonRaphsonItGCB2,metodo)
+        iteration(NewtonRaphsonItGCB3,metodo)
         
-        historial_pasosB = iteration_con_historial(NewtonRaphsonItGCB, "gradienteConjugado")
+        historial_pasosB = iteration(NewtonRaphsonItGCB, metodo,True)
         
         #Instancias PLOT
         plotNewtonRaphsonItGCB = Plot(NewtonRaphsonItGCB)
@@ -334,7 +295,10 @@ def main():
     
     
     generateSimulationA(True)
-    generateSimulationB(False) #PONER EN TRUE CORRE LA PRUEBA CON UN FACTOR DE 3, LO CUAL PUEDE LLEVAR MUCHO TIEMPO EN MOSTRARSE
+    generateSimulationB(True,"JacobianoInversa") #PONER EN TRUE CORRE LA PRUEBA CON UN FACTOR DE 3, 
+                                                 #LO CUAL PUEDE LLEVAR MUCHO TIEMPO EN MOSTRARSE
+                                                 #Poner de segundo parametro "gradiente Conjugado" si se quiere ejecutar con ese metodo 
+    
     
     viewer.add_slide("VALORES INICIALES", view_heatmap, plotNewtonRaphsonItGCPrueba) #Añade la grafica de valores iniciales
     
