@@ -133,7 +133,7 @@ class NewtonRaphson:
                     
                     
     #Calcula el valor de H mediante el gradienteConjugado como método para la solución de sistema de ecuaciones lineales
-    def gradienteConjugado(self, M, e):
+    def conjugateGradient(self, M, e):
         #M es numero de paradas
         j= self.matrixJacobiana
         jt= np.transpose(j)
@@ -170,7 +170,7 @@ class NewtonRaphson:
 
     #Calculo del nuevo vector en cada iteración de Newthon Raphson utilizando el sistema de ecuaciones lineales para hallar H 
     def newVector(self): 
-        h = self.gradienteConjugado(self.Nx*self.Ny,1e-16)
+        h = self.conjugateGradient(self.Nx*self.Ny,1e-16)
         self.vec = self.vec + h
         
     #Calculo del nuevo vector en cada iteración de Newthon Raphson utilizando la inversa del jacobiano
@@ -203,17 +203,12 @@ class NewtonRaphson:
         return np.linalg.norm(norm, 1) <= 1
     
     #Determina el numero de condicion de nuestra matriz jacobiana
-    def cal_numeroCondicion(self):
-        jacobiano = self.matrixJacobiana
-        jacobianoTranspuesto = jacobiano.T
-        jaconew = (jacobianoTranspuesto + jacobiano)/2
-        U,S,T = np.linalg.svd(jaconew)
-
-        numeroSingularMax = np.max(S)
-        numeroSingularMin = np.min(S)
-        numeroCondicion = numeroSingularMax/numeroSingularMin
-
-        return numeroCondicion,numeroSingularMax,numeroSingularMin
+    def cal_condition_number(self):
+        """
+        Determina el número de condición de la matriz jacobiana.
+        Un número de condición alto indica que la matriz está mal condicionada.
+        """
+        return np.linalg.cond(self.matrixJacobiana)
 
     #Verifica si una matriz es simetrica, necesario para la convergencia de los métodos de krilov (Gradiente desce y Gradiente conjugado)
     def is_Simetric(self):
@@ -239,3 +234,36 @@ class NewtonRaphson:
         cs = CubicSpline(x, y, bc_type='natural')
         
         return cs
+    
+    """COMPROBACION DE LAS PROPIEDADES DE LA MATRIZ JACOBIANA"""
+
+    def is_Richardson(self):
+        I = np.eye(len(self.matrixJacobiana))
+        norm = np.subtract(I, self.matrixJacobiana)
+
+        #Sacal la nomra 1, la de la suma de colmnas
+        return np.linalg.norm(norm, 1) <= 1
+    
+    def is_symmetrical(self):
+        transpose = np.transpose(self.matrixJacobiana)
+        return np.allclose(transpose, self.matrixJacobiana)
+    
+    def is_d_dominant(self):
+        for i in range(len(self.matrixJacobiana)):
+            sumRow = 0
+            a_ii = 0
+            for j in range(len(self.matrixJacobiana[i])):
+                if(i != j):
+                    sumRow += abs(self.matrixJacobiana[i,j])
+                else:
+                    a_ii = abs(self.matrixJacobiana[i,j])
+            if(sumRow >= a_ii):
+                return False
+        return True
+    
+    def is_full_rank(self):
+        """
+        Verifica si la matriz jacobiana es de rango completo.
+        """
+        rank = np.linalg.matrix_rank(self.matrixJacobiana)
+        return rank == self.Nx * self.Ny
