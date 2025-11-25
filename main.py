@@ -110,6 +110,8 @@ def main():
     NewtonRaphsonItGCPrueba= NewtonRaphson( Nx=nxA,  Ny=nyA,  blocks=bloqA,  V0=1,  v_ij=0.01,  h=h_valA, v0ParedSuperior= 1)
     NewtonRaphsonItGCPrueba.vecInicial()
     
+    
+    
     # ---------------------------------------------------------------------------
     # INSTANCIAS SIMULACIÓN CON FACTOR: 1 Y VELOCIDAD 1 EN LA PARED SUPERIOR
     # ---------------------------------------------------------------------------
@@ -249,7 +251,7 @@ def main():
         #Instancias PLOT
         plotNewtonRaphsonItGCB = Plot(NewtonRaphsonItGCB)
         plotNewtonRaphsonItGCB2 = Plot(NewtonRaphsonItGCB2)
-        plotNewtonRaphsonItGCB3 = Plot(NewtonRaphsonItGCB2)
+        plotNewtonRaphsonItGCB3 = Plot(NewtonRaphsonItGCB3)
         
         # --- GRUPO B1 (mayor escala)  ---
         viewer.add_slide("B1: Mapa de Calor", view_heatmap, plotNewtonRaphsonItGCB)
@@ -305,3 +307,4 @@ def main():
     viewer.run()
     
 main()
+
