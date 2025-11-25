@@ -55,6 +55,7 @@ def iteration(NewtonRaphson,callNewVector,saveHistory=False):
     
     if saveHistory : NewtonRaphson.vecInicial()
     historial = [] # Aquí se guardan las "fotos" de la simulación
+    numeros_condicion = []
     # Guardamos el estado inicial (Iteración 0)
     historial.append(NewtonRaphson.vec.copy())
     
@@ -90,12 +91,28 @@ def iteration(NewtonRaphson,callNewVector,saveHistory=False):
         
         # Guardar vector actual antes de la actualización
         vec_anterior = NewtonRaphson.vec.copy()
-        
         NewtonRaphson.cal_jacobiano()  
+        # Calcular e imprimir el número de condición de la Jacobiana en esta iteración
+        numero_cond = NewtonRaphson.cal_condition_number()
+        numeros_condicion.append(numero_cond)
+        print(f"  Número de condición del Jacobiano: {numero_cond}")
+
+        # Comprobar propiedades de la matriz
+        print(f"  Cumple Richardson: {NewtonRaphson.is_Richardson()}")
+        print(f"  Es simétrica: {NewtonRaphson.is_symmetrical()}")
+        print(f"  Es diagonalmente dominante: {NewtonRaphson.is_d_dominant()}")
+        print(f"  Es de rango completo: {NewtonRaphson.is_full_rank()}")
+
         (NewtonRaphson.newVector() if callNewVector == "gradiente Conjugado" else NewtonRaphson.newVectorInversa())
         historial.append(NewtonRaphson.vec.copy())
     else:
         print(f"No convergió después de {max_iterations} iteraciones")
+
+    if numeros_condicion:
+        promedio_cond = np.mean(numeros_condicion)
+        print(f"\nNúmero de condición promedio: {promedio_cond}")
+    
+    print("----------------------------------------------")
     
     return historial
     
@@ -297,7 +314,7 @@ def main():
     
     
     generateSimulationA(True)
-    generateSimulationB(True,"JacobianoInversa") #PONER EN TRUE CORRE LA PRUEBA CON UN FACTOR DE 3, 
+    generateSimulationB(False,"JacobianoInversa") #PONER EN TRUE CORRE LA PRUEBA CON UN FACTOR DE 3, 
                                                  #LO CUAL PUEDE LLEVAR MUCHO TIEMPO EN MOSTRARSE
                                                  #Poner de segundo parametro "gradiente Conjugado" si se quiere ejecutar con ese metodo 
     
