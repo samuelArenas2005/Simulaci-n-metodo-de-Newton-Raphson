@@ -211,7 +211,7 @@ class NewtonRaphson:
         return np.linalg.cond(self.matrixJacobiana)
 
     #Verifica si una matriz es simetrica, necesario para la convergencia de los métodos de krilov (Gradiente desce y Gradiente conjugado)
-    def is_Simetric(self):
+    def is_Simetric(self): 
         transpose = np.transpose(self.matrixJacobiana)
         return np.allclose(transpose, self.matrixJacobiana)
 
